@@ -67,4 +67,11 @@ cmake_minimum_required(VERSION 2.8)
 
 add_subdirectory(src)
 
+#IF (DEFINED VTK_ENABLED)
+  FIND_PACKAGE(VTK COMPONENTS vtkCommonDataModel vtkFiltersCore vtkImagingStencil vtkIOXML NO_MODULE)
+  INCLUDE(${VTK_USE_FILE})
+
+  add_subdirectory(vtk)
+#ENDIF()
+
 
