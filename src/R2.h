@@ -62,8 +62,8 @@
 ********************************************************************************/
 
 #include "Definitions.h"
-#include "Metric.h"
 #include "MergeTree.h"
+#include "Metric.h"
 
 class R2 : public Metric
 {

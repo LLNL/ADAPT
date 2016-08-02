@@ -9,6 +9,7 @@
 #define VTK_VTKMERGETREE_H_
 
 #include <stdint.h>
+#include "vtkCommonDataModelModule.h"
 #include "vtkMutableDirectedGraph.h"
 #include "vtkTypeInt64Array.h"
 #include "vtkSmartPointer.h"
@@ -17,7 +18,7 @@
 class vtkMergeTreeNode;
 
 
-class vtkMergeTree : public vtkMutableDirectedGraph
+class VTKCOMMONDATAMODEL_EXPORT vtkMergeTree : public vtkMutableDirectedGraph
 {
 public:
 
@@ -30,8 +31,17 @@ public:
 
   static vtkMergeTree *New();
 
+  vtkGetMacro(Threshold,double);
+  vtkSetMacro(Threshold,double);
+
+  vtkGetMacro(Maximum,double);
+  vtkSetMacro(Maximum,double);
+
+  vtkGetMacro(Minimum,double);
+  vtkSetMacro(Minimum,double);
+
   // Construct a new node
-  vtkTypeInt64 AddNode(vtkTypeInt64 id);
+  vtkIdType AddNode(vtkTypeInt64 id);
 
   // Return a node for traversal
   vtkMergeTreeNode GetNode(vtkIdType index);
@@ -60,6 +70,14 @@ private:
   // Current threshold
   double Threshold;
 
+  // Description
+  // The global "maximum" function value
+  double Maximum;
+
+  // Description
+  // The global "minimum" function value
+  double Minimum;
+
   vtkMergeTree(const vtkMergeTree&) {}  // Not implemented.
   void operator=(const vtkMergeTree&) {}  // Not implemented.
 
@@ -78,7 +96,7 @@ public:
 
   // Description
   // Constructor that creates a valid vertex
-  vtkMergeTreeNode(vtkSmartPointer<vtkMergeTree> tree, vtkTypeInt64 index);
+  vtkMergeTreeNode(vtkSmartPointer<vtkMergeTree> tree, vtkIdType index) : Tree(tree), Index(index) {}
 
   // Description
   // Copy-constructor
@@ -89,7 +107,7 @@ public:
   vtkMergeTreeNode* operator=(const vtkMergeTreeNode& node);
 
   // Return the index of the vertex
-  vtkTypeInt64 index() const {return Index;}
+  vtkIdType index() const {return Index;}
 
   // Return the vertex id (the index of the corresponding mesh vertex)
   vtkTypeInt64 id() const {return Tree->GetVertexData()->GetArray(vtkMergeTree::MESH_ID)->GetTuple1(Index);}
@@ -108,7 +126,7 @@ private:
 
   // Description
   // The index in the tree of this vertex
-  vtkTypeInt64 Index;
+  vtkIdType Index;
 };
 
 

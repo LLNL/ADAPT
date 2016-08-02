@@ -2,6 +2,7 @@
 SET(MT_SOURCES
   vtkMergeTree.cxx 
   vtkMergeTreeGenerator.cxx
+  vtkMergeTreeTransformation.cxx
 )
 
 ADD_LIBRARY(vtkMergeTree ${MT_SOURCES})

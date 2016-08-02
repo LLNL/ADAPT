@@ -14,15 +14,22 @@
 #include "vtkDataObject.h"
 #include "vtkDataSet.h"
 #include "vtkDataArray.h"
+#include "vtkArrayData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMutableDirectedGraph.h"
 #include "vtkSmartPointer.h"
 #include "vtkIntArray.h"
+#include "vtkFloatArray.h"
+#include "vtkPointSet.h"
 #include "vtkPointData.h"
 #include "vtkIdList.h"
 #include "vtkMergeTreeGenerator.h"
 #include "vtkMergeTree.h"
+#include "vtkMergeTreeTransformation.h"
+
+
+
 
 //! Standard union-find implementation
 /*! This class implements a default union-find structure using an stl::map
@@ -126,8 +133,6 @@ void vtkMergeTreeGenerator::DataSetIterator::initialize(vtkIdType v)
   }
 
   nIt = Neighbors.begin();
-
-  fprintf(stderr,"Number of neighbors %d  %d\n",Neighbors.size(),nIt==Neighbors.end());
 }
 
 
@@ -136,7 +141,7 @@ void vtkMergeTreeGenerator::DataSetIterator::initialize(vtkIdType v)
 
 vtkStandardNewMacro(vtkMergeTreeGenerator);
 
-vtkMergeTreeGenerator::vtkMergeTreeGenerator() : vtkDataSetAlgorithm()
+vtkMergeTreeGenerator::vtkMergeTreeGenerator() : vtkPointSetAlgorithm()
 {
   this->StoreSegmentation = true;
   this->ComputeMergeTree = true;
@@ -160,6 +165,31 @@ int vtkMergeTreeGenerator::FillInputPortInformation(int port, vtkInformation* in
   return 1;
 }
 
+int vtkMergeTreeGenerator::FillOutputPortInformation(int port, vtkInformation* info)
+{
+  switch (port) {
+    case 0:
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPointSet");
+      break;
+    case 1:
+      //info->Set(vtkDirectedGraph::DATA_TYPE_NAME(), "vtkMergeTree");
+      break;
+    default:
+      break;
+  }
+
+  return 1;
+}
+
+vtkSmartPointer<vtkMergeTree> vtkMergeTreeGenerator::GetTree()
+{
+  vtkSmartPointer<vtkMergeTree> tmp = this->tree;
+
+  this->tree = vtkSmartPointer<vtkMergeTree>();
+
+  return tmp;
+}
+
 
 int vtkMergeTreeGenerator::RequestData(
     vtkInformation* vtkNotUsed( request ),
@@ -174,152 +204,154 @@ int vtkMergeTreeGenerator::RequestData(
 
   // call ExecuteData
   vtkDataSet *data = vtkDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkDataSet *output = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkMergeTree *tree = vtkMergeTree::SafeDownCast(treeInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPointSet *output = vtkPointSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+
+
+  //vtkMergeTree *tree = vtkMergeTree::SafeDownCast(treeInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  tree = vtkSmartPointer<vtkMergeTree>::New();
 
   // Create an array for the vertex labels
-   vtkSmartPointer<vtkIntArray> labels = vtkSmartPointer<vtkIntArray>::New();
-   labels->SetNumberOfComponents(1);
-   labels->SetName("Segmentation");
-
-   // For now we will create a full sized array
-   labels->SetNumberOfTuples(data->GetNumberOfPoints());
-
-   fprintf(stderr,"Number of points %d %d\n",data->GetNumberOfPoints(),labels->GetNumberOfTuples());
-
-   vtkDataArray* function = data->GetPointData()->GetScalars();
-   std::vector<vtkIdType> order;
-   std::vector<vtkIdType>::const_iterator oIt;
-
-   fprintf(stderr,"%d %d %d\n",output->GetNumberOfPoints(),function->GetNumberOfTuples(),data->GetPointData()->GetScalars()->GetNumberOfTuples());
-
-   if (ComputeMergeTree) {
-
-     // Initialize the array (there really should be a faster way) and screen the vertices
-     for (i=0;i<data->GetNumberOfPoints();i++) {
-       labels->SetTuple1(i,LNULL);
-
-       if (function->GetTuple1(i) >= Threshold)
-         order.push_back(i);
-     }
-
-     Greater cmp(function);
-     std::sort(order.begin(),order.end(),cmp);
-   }
-   else {
-     // Initialize the array (there really should be a faster way) and screen the vertices
-     for (i=0;i<labels->GetNumberOfTuples();i++) {
-       labels->SetTuple1(i,LNULL);
-
-       if (function->GetTuple1(i) <= Threshold)
-         order.push_back(i);
-     }
-
-     Greater cmp(function);
-     std::sort(order.rbegin(),order.rend(),cmp);
-   }
-
-   UnionFind uf;
-   vtkIdType neigh_label;
-   vtkIdType new_label,tmp;
-   vtkIdList* cells;
-   NeighborhoodIterator* it = new DataSetIterator(data);
-   double fake_id;
-
-   // For all vertices in descending order
-   for (oIt=order.begin();oIt!=order.end();oIt++) {
-
-     //fprintf(stderr,"Process vertex %d\n",*oIt);
-     // For all neighbors (careful might touch the same neighbor
-     // multiple times
-     for (it->initialize(*oIt);!it->end();(*it)++) {
-       if (labels->GetTuple1(it->id()) != LNULL) { // If the neighbor has already been labeled it is considered higher
-         neigh_label = uf.rep(labels->GetTuple1(it->id())); // Find its current active label
-
-         if (labels->GetTuple1(*oIt) == LNULL) {// If this is the first label we see
-           labels->SetTuple1(*oIt,neigh_label); // We pass on this label
-         }
-         else if (neigh_label != labels->GetTuple1(*oIt)) { // If we see a second label *oIt is a saddle
-
-           // If the node corresponding to our current label is not *oIt itself
-           // then we have not yet created a critical point for *oIt
-           if (tree->GetRep(labels->GetTuple1(*oIt)) != *oIt) {
-
-             // Add a new node into the tree and use its id as label
-             new_label = tree->AddNode(*oIt);
-
-             // Now set the pointer for the node corresponding to the current label
-             tree->AddEdge(labels->GetTuple1(*oIt),new_label);
-
-             // And pass on the representative
-             fake_id = tree->GetRep(labels->GetTuple1(*oIt));
-             tree->SetRep(new_label,fake_id);
-
-             // Create a corresponding UF label
-             uf.addLabel(new_label);
-
-             // And merge the two labels making sure the later one survives
-             uf.mergeLabel(labels->GetTuple1(*oIt),new_label);
-
-             // And update our own label
-             labels->SetTuple1(*oIt,new_label);
-           }
-
-           // The above if statement took care of the first arc that reached *oIt.
-           // Now we take care of the second arc with neigh_label
-
-           // Set the appropriate down pointer
-           tree->AddEdge(neigh_label,labels->GetTuple1(*oIt));
-
-           // First, update the representative if necessary. Since we create the
-           // labels (and nodes) in order of the sort, the rep id can be used to
-           // determine which node is higher.
-           if (tree->GetRep(neigh_label) < tree->GetRep(labels->GetTuple1(*oIt))) {
-             tree->SetRep(labels->GetTuple1(*oIt),tree->GetRep(neigh_label));
-           }
-
-           // Now we merge the labels
-           uf.mergeLabel(neigh_label,labels->GetTuple1(*oIt));
-
-         } // end-if we see a second/third/... label
-       } // end-if we found a labeled neighbor
-     } // end-for all neighbors
-
-     if (labels->GetTuple1(*oIt) == LNULL) { // If we have not found a higher neighbor
-
-       // Add a new node into the tree and use its id as label
-       new_label = tree->AddVertex(*oIt);
-
-       // Add the label to the UF
-       uf.addLabel(new_label);
-
-       // Set the new label
-       labels->SetTuple1(*oIt,new_label);
-     }
-
-     fprintf(stderr,"Setting label[%d] to %d\n",*oIt,(int)labels->GetTuple1(*oIt));
-   } // end-for all vertices in sorted order
-
-   delete it;
+  vtkSmartPointer<vtkIntArray> labels = vtkSmartPointer<vtkIntArray>::New();
+  labels->SetNumberOfComponents(1);
+  labels->SetName("Segmentation");
+  // For now we will create a full sized array
+  labels->SetNumberOfTuples(data->GetNumberOfPoints());
 
 
-   // Now we need to assemble the output
-   output->CopyStructure(data);
-   output->CopyAttributes(data);
-   //output->GetPointData()->DeepCopy(data->GetPointData());
-
-   fprintf(stderr,"%d %d %d\n",output->GetNumberOfPoints(),data->GetPointData()->GetNumberOfTuples(),data->GetPointData()->GetScalars()->GetNumberOfTuples());
-
-   //output->GetPointData()->Get
-
-   output->GetPointData()->AddArray(labels);
+  vtkFloatArray* transform = vtkFloatArray::New();
+  transform->SetNumberOfComponents(1);
+  transform->SetName("Transformation");
+  // For now we will create a full sized array
+  transform->SetNumberOfTuples(data->GetNumberOfPoints());
 
 
-   //tree->GetVertexData()->AddArray(rep);
+
+  fprintf(stderr,"Number of points %d %d\n",data->GetNumberOfPoints(),labels->GetNumberOfTuples());
+
+  vtkDataArray* function = data->GetPointData()->GetScalars();
+  std::vector<vtkIdType> order;
+  std::vector<vtkIdType>::const_iterator oIt;
+
+  //fprintf(stderr,"%d %d %d\n",output->GetNumberOfPoints(),function->GetNumberOfTuples(),data->GetPointData()->GetScalars()->GetNumberOfTuples());
+
+  if (ComputeMergeTree) {
+
+    // Initialize the array (there really should be a faster way) and screen the vertices
+    for (i=0;i<data->GetNumberOfPoints();i++) {
+      labels->SetTuple1(i,LNULL);
+
+      if (function->GetTuple1(i) >= Threshold)
+        order.push_back(i);
+    }
+
+    Greater cmp(function);
+    std::sort(order.begin(),order.end(),cmp);
+  }
+  else {
+    // Initialize the array (there really should be a faster way) and screen the vertices
+    for (i=0;i<labels->GetNumberOfTuples();i++) {
+      labels->SetTuple1(i,LNULL);
+
+      if (function->GetTuple1(i) <= Threshold)
+        order.push_back(i);
+    }
+
+    Greater cmp(function);
+    std::sort(order.rbegin(),order.rend(),cmp);
+  }
+
+  tree->SetMaximum(order[0]);
+  tree->SetMinimum(order.back());
+
+  UnionFind uf;
+  vtkIdType neigh_label;
+  vtkIdType new_label,tmp;
+  vtkIdList* cells;
+  NeighborhoodIterator* it = new DataSetIterator(data);
+  double fake_id;
+
+  // For all vertices in descending order
+  for (oIt=order.begin();oIt!=order.end();oIt++) {
+
+    fprintf(stderr,"Process vertex %d\n",*oIt);
+    // For all neighbors (careful might touch the same neighbor
+    // multiple times
+    for (it->initialize(*oIt);!it->end();(*it)++) {
+      if (labels->GetTuple1(it->id()) != LNULL) { // If the neighbor has already been labeled it is considered higher
+        neigh_label = uf.rep(labels->GetTuple1(it->id())); // Find its current active label
+
+        if (labels->GetTuple1(*oIt) == LNULL) {// If this is the first label we see
+          labels->SetTuple1(*oIt,neigh_label); // We pass on this label
+        }
+        else if (neigh_label != labels->GetTuple1(*oIt)) { // If we see a second label *oIt is a saddle
+
+          // If the node corresponding to our current label is not *oIt itself
+          // then we have not yet created a critical point for *oIt
+          if (tree->GetRep(labels->GetTuple1(*oIt)) != *oIt) {
+
+            // Add a new node into the tree and use its id as label
+            new_label = tree->AddNode(*oIt);
+
+            // Now set the pointer for the node corresponding to the current label
+            tree->AddEdge(labels->GetTuple1(*oIt),new_label);
+
+            // And pass on the representative
+            fake_id = tree->GetRep(labels->GetTuple1(*oIt));
+            tree->SetRep(new_label,fake_id);
+
+            // Create a corresponding UF label
+            uf.addLabel(new_label);
+
+            // And merge the two labels making sure the later one survives
+            uf.mergeLabel(labels->GetTuple1(*oIt),new_label);
+
+            // And update our own label
+            labels->SetTuple1(*oIt,new_label);
+          }
+
+          // The above if statement took care of the first arc that reached *oIt.
+          // Now we take care of the second arc with neigh_label
+
+          // Set the appropriate down pointer
+          tree->AddEdge(neigh_label,labels->GetTuple1(*oIt));
+
+          // First, update the representative if necessary. Since we create the
+          // labels (and nodes) in order of the sort, the rep id can be used to
+          // determine which node is higher.
+          if (tree->GetRep(neigh_label) < tree->GetRep(labels->GetTuple1(*oIt))) {
+            tree->SetRep(labels->GetTuple1(*oIt),tree->GetRep(neigh_label));
+          }
+
+          // Now we merge the labels
+          uf.mergeLabel(neigh_label,labels->GetTuple1(*oIt));
+
+        } // end-if we see a second/third/... label
+      } // end-if we found a labeled neighbor
+    } // end-for all neighbors
+
+    if (labels->GetTuple1(*oIt) == LNULL) { // If we have not found a higher neighbor
+
+      // Add a new node into the tree and use its id as label
+      new_label = tree->AddNode(*oIt);
+
+      // Add the label to the UF
+      uf.addLabel(new_label);
+
+      // Set the new label
+      labels->SetTuple1(*oIt,new_label);
+    }
+
+    fprintf(stderr,"Setting label[%d] to %d\n",*oIt,(int)labels->GetTuple1(*oIt));
+  } // end-for all vertices in sorted order
+
+  delete it;
 
 
-   return 1;
+  output->GetPointData()->SetScalars(transform);
+
+  return 1;
 }
 
 

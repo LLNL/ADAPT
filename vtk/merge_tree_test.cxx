@@ -14,6 +14,7 @@
 #include "vtkMutableDirectedGraph.h"
 
 #include "vtkMergeTreeGenerator.h"
+#include "vtkMergeTree.h"
 
 int main(int argc, const char* argv[])
 {
@@ -46,7 +47,7 @@ int main(int argc, const char* argv[])
   }
 
   vtkSmartPointer<vtkMergeTreeGenerator> mt = vtkSmartPointer<vtkMergeTreeGenerator>::New();
-  vtkSmartPointer<vtkMergeTree> tree = vtkSmartPointer<vtkMergeTree>::New();
+  vtkSmartPointer<vtkMergeTree> tree;
 
   vtkSmartPointer<vtkFloatArray> func = vtkSmartPointer<vtkFloatArray>::New();
   func->SetNumberOfComponents(1);
@@ -60,12 +61,15 @@ int main(int argc, const char* argv[])
 
   surface->GetPointData()->SetScalars(func);
 
-  mt->SetInputData(surface);
+  mt->SetInputDataObject(surface);
   mt->Update();
 
-  surface = vtkPolyData::SafeDownCast(mt->GetOutput(0));
-  tree = vtkMergeTree::SafeDownCast(mt->GetOutput(1));
 
+  vtkSmartPointer<vtkPointSet> transformation;
+  transformation = vtkPointSet::SafeDownCast(mt->GetOutput(0));
+  tree = mt->GetTree();
+
+  surface->GetPointData()->AddArray(transformation->GetPointData()->GetScalars());
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName("seg.vtp");

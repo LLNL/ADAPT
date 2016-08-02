@@ -65,8 +65,8 @@
 #define RELEVANCE_H
 
 #include "Definitions.h"
-#include "Metric.h"
 #include "MergeTree.h"
+#include "Metric.h"
 
 class Relevance : public Metric
 {

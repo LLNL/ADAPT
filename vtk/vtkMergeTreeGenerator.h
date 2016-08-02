@@ -12,7 +12,8 @@
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkDataSetAlgorithm.h"
-#include "vtkDataArray.h"
+#include "vtkPointSetAlgorithm.h"
+#include "vtkMergeTree.h"
 
 enum MergeTreeSplitType {
   SPLIT_BY_SIZE = 0,
@@ -21,7 +22,7 @@ enum MergeTreeSplitType {
 };
 
 
-class VTKCOMMONEXECUTIONMODEL_EXPORT vtkMergeTreeGenerator : public vtkDataSetAlgorithm
+class VTKCOMMONEXECUTIONMODEL_EXPORT vtkMergeTreeGenerator : public vtkPointSetAlgorithm
 {
 public:
 
@@ -33,7 +34,7 @@ public:
   // Constructs with initial values of zero.
   static vtkMergeTreeGenerator *New();
 
-  vtkTypeMacro(vtkMergeTreeGenerator,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkMergeTreeGenerator,vtkPointSetAlgorithm);
 
   void SetSegmentation(bool seg) {StoreSegmentation = seg;}
 
@@ -46,6 +47,10 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) {}
 
   int FillInputPortInformation(int port, vtkInformation* info);
+
+  int FillOutputPortInformation(int port, vtkInformation* info);
+
+  vtkSmartPointer<vtkMergeTree> GetTree();
 
 protected:
 
@@ -102,6 +107,8 @@ protected:
   // Description
   // Flag to encode whether and how to split the tree
   MergeTreeSplitType SplitType;
+
+  vtkSmartPointer<vtkMergeTree> tree;
 
   vtkMergeTreeGenerator();
   virtual ~vtkMergeTreeGenerator();
