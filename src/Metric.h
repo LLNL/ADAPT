@@ -65,6 +65,7 @@
 #define METRIC_H
 
 #include <assert.h>
+#include <cstddef.h>
 #include <map>
 
 #include "Definitions.h"

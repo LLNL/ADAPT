@@ -63,6 +63,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 
 
 #include "Definitions.h"
@@ -193,7 +194,7 @@ int parse_command_line(int argc, const char** argv)
       gTreeType = atoi(argv[++i]);
       break;
     case 5: // --threshold
-      gThreshold = atof(argv[++i]);
+      gThreshold = (FunctionType)atof(argv[++i]);
       break;
     case 6: // --split-type
       i++;
@@ -209,7 +210,7 @@ int parse_command_line(int argc, const char** argv)
       }
       break;
     case 7: // --split
-      gSplitLimit = atof(argv[++i]);
+      gSplitLimit = (FunctionType)atof(argv[++i]);
       break;
     case 8: // --metric
       i++;
@@ -243,7 +244,7 @@ int main(int argc, const char** argv)
   GlobalIndexType size = gDim[0]*gDim[1]*gDim[2];
 
 
-  Metric* metric;
+  Metric* metric = NULL;
   if (gMetric == METRIC_RELEVANCE) {
     metric = new Relevance();
   }
@@ -258,7 +259,7 @@ int main(int argc, const char** argv)
 
   FILE* input = NULL;
   if (gInputFileName != NULL)
-    input = fopen(gInputFileName,"r");
+    input = fopen(gInputFileName,"rb");
   else {
     fprintf(stderr,"Error, no input filename given\n");
     return 0;
@@ -315,7 +316,7 @@ int main(int argc, const char** argv)
   if (gOutputFileName == NULL)
     output = stdout;
   else
-    output = fopen(gOutputFileName,"w");
+    output = fopen(gOutputFileName,"wb");
 
   // Now we compute and output the transformed volume
   for (GlobalIndexType k=0;k<gDim[2];k++) {

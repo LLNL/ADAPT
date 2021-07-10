@@ -61,7 +61,7 @@
 * purposes.
 ********************************************************************************/
 
-#include "manPage.h"
+#include "ManPage.h"
 
 void print_help(FILE* output, const char* exec)
 {
