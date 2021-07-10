@@ -98,7 +98,7 @@ LocalIndexType UnionFind::rep(LocalIndexType id)
 void UnionFind::addLabel(LocalIndexType label)
 {
   mLabel.push_back(label);
-  mIndexMap[label] = mLabel.size()-1;
+  mIndexMap[label] = (LocalIndexType)(mLabel.size()-1);
 }
 
 void UnionFind::mergeLabel(LocalIndexType from, LocalIndexType to)

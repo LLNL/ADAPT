@@ -62,6 +62,7 @@
 ********************************************************************************/
 
 #include <cassert>
+#include <cstddef>
 #include <stack>
 #include "MergeTree.h"
 
@@ -100,7 +101,7 @@ MergeTree::MergeTree()
 
 LocalIndexType MergeTree::addCriticalPoint(GlobalIndexType id)
 {
-  LocalIndexType i = mNodes.size();
+  LocalIndexType i = (LocalIndexType)mNodes.size();
 
   mNodes.push_back(Node(id,i));
   mArcs.push_back(Arc(id));
@@ -170,7 +171,7 @@ int MergeTree::splitBySize(LocalIndexType n)
 
   while (i < mArcs.size()) {
     if (mArcs[i].size() > n)
-      splitArc(i,mArcs[i].mVertices.size()/2);
+      splitArc(i,(LocalIndexType)mArcs[i].mVertices.size()/2);
     else
       i++;
   }
