@@ -172,7 +172,7 @@ public:
 	~MergeTree() {}
 
 	//! Return the number of nodes/arcs
-	LocalIndexType size() const {return mNodes.size();}
+	LocalIndexType size() const {return (LocalIndexType)mNodes.size();}
 
   //! Return a reference to the i'th node
   Node& node(LocalIndexType i) {return mNodes[i];}

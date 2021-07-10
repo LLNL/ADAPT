@@ -128,7 +128,7 @@ int merge_tree_sorted_sweep(Comparison& greater,
   // For all vertices in descending order
   for (oIt=order.begin();oIt!=order.end();oIt++) {
     if (100*progress/order.size() >= next) {
-      fprintf(stderr,"Processing  %03ld%%\r",100*progress/order.size());
+      fprintf(stderr,"Processing  %03zu%%\r",100*progress/order.size());
       next++;
     }
     progress++;

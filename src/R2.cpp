@@ -102,7 +102,7 @@ FunctionType R2::eval(LocalIndexType label) const
 
   LocalIndexType i;
   FunctionType mean_value = 0;
-  FunctionType mean_volume = feature.size() / 2.0;
+  FunctionType mean_volume = (FunctionType)(feature.size() / 2.0);
 
   for (i=0;i<feature.size();i++) {
     values[i] = mData[feature[i]];
@@ -124,7 +124,7 @@ FunctionType R2::eval(LocalIndexType label) const
   stddev_value = sqrt(stddev_value);
   stddev_volume = sqrt(stddev_volume);
 
-  return std::min((double)1,pow(cov / (stddev_value*stddev_volume),2));
+  return (FunctionType)std::min((double)1,pow(cov / (stddev_value*stddev_volume),2));
 }
 
 
