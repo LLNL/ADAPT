@@ -24,10 +24,6 @@ vtkMergeTree::vtkMergeTree() : vtkMutableDirectedGraph()
   GetVertexData()->AddArray(vtkSmartPointer<vtkIdTypeArray>::New());
 }
 
-vtkMergeTreeNode vtkMergeTree::GetNode(vtkIdType index)
-{
-  return vtkMergeTreeNode(this,index);
-}
 
 vtkIdType vtkMergeTree::AddNode(vtkTypeInt64 id)
 {
@@ -39,4 +35,27 @@ vtkIdType vtkMergeTree::AddNode(vtkTypeInt64 id)
   return index;
 }
 
+vtkStandardNewMacro(vtkSegmentedMergeTree);
 
+vtkSegmentedMergeTree::vtkSegmentedMergeTree() : vtkMergeTree()
+{
+}
+
+
+
+vtkIdType vtkSegmentedMergeTree::AddNode(vtkTypeInt64 id)
+{
+  vtkIdType index = vtkMergeTree::AddNode(id);
+
+  Branches.push_back(std::vector<vtkTypeInt64>());
+
+  assert (Branches.size() == index+1);
+
+  return index;
+}
+
+
+void vtkSegmentedMergeTree::AddVertexToBranch(vtkIdType branch, vtkTypeInt64 id)
+{
+  Branches[branch].push_back(id);
+}

@@ -5,17 +5,17 @@
  *      Author: bremer5
  */
 
-#ifndef VTK_VTKMERGETREE_H_
-#define VTK_VTKMERGETREE_H_
+#ifndef __vtkMergeTree_h
+#define __vtkMergeTree_h
 
 #include <stdint.h>
-#include "vtkCommonDataModelModule.h"
-#include "vtkMutableDirectedGraph.h"
-#include "vtkTypeInt64Array.h"
-#include "vtkSmartPointer.h"
-#include "vtkDataSetAttributes.h"
+#include <vector>
 
-class vtkMergeTreeNode;
+#include <vtkCommonDataModelModule.h>
+#include <vtkMutableDirectedGraph.h>
+#include <vtkTypeInt64Array.h>
+#include <vtkSmartPointer.h>
+#include <vtkDataSetAttributes.h>
 
 
 class VTKCOMMONDATAMODEL_EXPORT vtkMergeTree : public vtkMutableDirectedGraph
@@ -41,12 +41,9 @@ public:
   vtkSetMacro(Minimum,double);
 
   // Construct a new node
-  vtkIdType AddNode(vtkTypeInt64 id);
+  virtual vtkIdType AddNode(vtkTypeInt64 id);
 
-  // Return a node for traversal
-  vtkMergeTreeNode GetNode(vtkIdType index);
-
-  // Return the representative for the given node
+   // Return the representative for the given node
   vtkTypeInt64 GetId(vtkIdType index) {return GetVertexData()->GetArray(vtkMergeTree::MESH_ID)->GetTuple1(index);}
 
   // Return the representative for the given node
@@ -63,9 +60,6 @@ protected:
   // Destructor
   virtual ~vtkMergeTree() {}
 
-
-private:
-
   // Description
   // Current threshold
   double Threshold;
@@ -78,55 +72,50 @@ private:
   // The global "minimum" function value
   double Minimum;
 
+private:
+
   vtkMergeTree(const vtkMergeTree&) {}  // Not implemented.
   void operator=(const vtkMergeTree&) {}  // Not implemented.
 
 
 };
 
-// Description
-// A MergeTreeVertex is a convenient way to traverse a merge tree
-class vtkMergeTreeNode
+class vtkSegmentedMergeTree : public vtkMergeTree
 {
 public:
 
-  // Description
-  // Constructor that sets empty fields and creates an invalid vertex
-  vtkMergeTreeNode();
+  vtkTypeMacro(vtkSegmentedMergeTree,vtkMergeTree);
 
-  // Description
-  // Constructor that creates a valid vertex
-  vtkMergeTreeNode(vtkSmartPointer<vtkMergeTree> tree, vtkIdType index) : Tree(tree), Index(index) {}
+  static vtkSegmentedMergeTree *New();
 
-  // Description
-  // Copy-constructor
-  vtkMergeTreeNode(const vtkMergeTreeNode& node) : Tree(node.Tree), Index(node.Index) {}
+  // Construct a new node
+  virtual vtkIdType AddNode(vtkTypeInt64 id);
 
-  // Description
-  // Assignment operator
-  vtkMergeTreeNode* operator=(const vtkMergeTreeNode& node);
+  // Add a vertex to a branch
+  void AddVertexToBranch(vtkIdType branch, vtkTypeInt64 id);
 
-  // Return the index of the vertex
-  vtkIdType index() const {return Index;}
+  vtkIdType GetNumberOfBranches() const {return Branches.size();}
 
-  // Return the vertex id (the index of the corresponding mesh vertex)
-  vtkTypeInt64 id() const {return Tree->GetVertexData()->GetArray(vtkMergeTree::MESH_ID)->GetTuple1(Index);}
+  const std::vector<vtkTypeInt64>& GetBranch(vtkIdType branch) const {return Branches[branch];}
 
-  // Return the representative of the current node
-  vtkTypeInt64 rep() const {return Tree->GetVertexData()->GetArray(vtkMergeTree::REP_ID)->GetTuple1(Index);}
+protected:
 
-  // Set the representative
-  void rep(vtkTypeInt64 id) {Tree->GetVertexData()->GetArray(vtkMergeTree::REP_ID)->SetTuple1(Index,id);}
+    // Description
+    // A collection of mesh indices for each branch
+    std::vector<std::vector<vtkTypeInt64> > Branches;
+
+    // Default constructor
+    vtkSegmentedMergeTree();
+
+    // Destructor
+    virtual ~vtkSegmentedMergeTree() {}
 
 private:
 
-  // Description
-  // Pointer to the local tree this vertex refers to
-  vtkSmartPointer<vtkMergeTree> Tree;
+    vtkSegmentedMergeTree(const vtkSegmentedMergeTree&) {}  // Not implemented.
+  void operator=(const vtkSegmentedMergeTree&) {}  // Not implemented.
 
-  // Description
-  // The index in the tree of this vertex
-  vtkIdType Index;
+
 };
 
 

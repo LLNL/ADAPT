@@ -50,7 +50,7 @@ public:
 
   int FillOutputPortInformation(int port, vtkInformation* info);
 
-  vtkSmartPointer<vtkMergeTree> GetTree();
+  vtkSmartPointer<vtkSegmentedMergeTree> GetTree();
 
 protected:
 
@@ -108,7 +108,7 @@ protected:
   // Flag to encode whether and how to split the tree
   MergeTreeSplitType SplitType;
 
-  vtkSmartPointer<vtkMergeTree> tree;
+  vtkSmartPointer<vtkSegmentedMergeTree> tree;
 
   vtkMergeTreeGenerator();
   virtual ~vtkMergeTreeGenerator();

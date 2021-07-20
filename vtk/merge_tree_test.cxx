@@ -7,6 +7,7 @@
 
 #include "vtkSmartPointer.h"
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkXMLPolyDataReader.h>
 #include <vtkSTLReader.h>
 #include <vtkOBJReader.h>
 #include <vtkFloatArray.h>
@@ -14,13 +15,14 @@
 #include "vtkMutableDirectedGraph.h"
 
 #include "vtkMergeTreeGenerator.h"
+#include "vtkMergeTreeTransformation.h"
 #include "vtkMergeTree.h"
 
 int main(int argc, const char* argv[])
 {
 
   if (argc < 2) {
-    fprintf(stderr,"Usage: %s <surface.obj>", argv[0]);
+    fprintf(stderr,"Usage: %s <surface.obj>\n", argv[0]);
     return 0;
   }
 
@@ -41,13 +43,19 @@ int main(int argc, const char* argv[])
     reader->Update();
     surface = reader->GetOutput();
   }
+  else if (strcmp(ext,"vtp") == 0) {
+    vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
+    reader->SetFileName(argv[1]);
+    reader->Update();
+    surface = reader->GetOutput();
+  }
   else {
     fprintf(stderr,"Unkown file format %s\n",ext);
     return 0;
   }
 
   vtkSmartPointer<vtkMergeTreeGenerator> mt = vtkSmartPointer<vtkMergeTreeGenerator>::New();
-  vtkSmartPointer<vtkMergeTree> tree;
+  vtkSmartPointer<vtkSegmentedMergeTree> tree;
 
   vtkSmartPointer<vtkFloatArray> func = vtkSmartPointer<vtkFloatArray>::New();
   func->SetNumberOfComponents(1);
@@ -66,10 +74,18 @@ int main(int argc, const char* argv[])
 
 
   vtkSmartPointer<vtkPointSet> transformation;
-  transformation = vtkPointSet::SafeDownCast(mt->GetOutput(0));
+
   tree = mt->GetTree();
 
-  surface->GetPointData()->AddArray(transformation->GetPointData()->GetScalars());
+
+  fprintf(stderr,"Processing surfaces %p %p\n",tree.Get(),surface.Get());
+  vtkSmartPointer<vtkMergeTreeTransformation> trans = vtkSmartPointer<vtkMergeTreeTransformation>::New();
+  trans->SetDebug(true);
+  //tree->SetDebug(true);
+  //surface->SetDebug(true);
+  trans->SetInputDataObject(0,surface);
+  trans->SetInputDataObject(1,tree);
+  trans->Update();
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName("seg.vtp");

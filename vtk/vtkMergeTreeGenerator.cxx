@@ -149,7 +149,7 @@ vtkMergeTreeGenerator::vtkMergeTreeGenerator() : vtkPointSetAlgorithm()
   this->SplitType = SPLIT_BY_NONE;
 
   this->SetNumberOfInputPorts(1);
-  this->SetNumberOfOutputPorts(2);
+  this->SetNumberOfOutputPorts(1);
 
 }
 
@@ -169,7 +169,7 @@ int vtkMergeTreeGenerator::FillOutputPortInformation(int port, vtkInformation* i
 {
   switch (port) {
     case 0:
-      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPointSet");
+      //info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPointSet");
       break;
     case 1:
       //info->Set(vtkDirectedGraph::DATA_TYPE_NAME(), "vtkMergeTree");
@@ -181,11 +181,11 @@ int vtkMergeTreeGenerator::FillOutputPortInformation(int port, vtkInformation* i
   return 1;
 }
 
-vtkSmartPointer<vtkMergeTree> vtkMergeTreeGenerator::GetTree()
+vtkSmartPointer<vtkSegmentedMergeTree> vtkMergeTreeGenerator::GetTree()
 {
-  vtkSmartPointer<vtkMergeTree> tmp = this->tree;
+  vtkSmartPointer<vtkSegmentedMergeTree> tmp = this->tree;
 
-  this->tree = vtkSmartPointer<vtkMergeTree>();
+  this->tree = vtkSmartPointer<vtkSegmentedMergeTree>();
 
   return tmp;
 }
@@ -210,7 +210,7 @@ int vtkMergeTreeGenerator::RequestData(
 
   //vtkMergeTree *tree = vtkMergeTree::SafeDownCast(treeInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  tree = vtkSmartPointer<vtkMergeTree>::New();
+  tree = vtkSmartPointer<vtkSegmentedMergeTree>::New();
 
   // Create an array for the vertex labels
   vtkSmartPointer<vtkIntArray> labels = vtkSmartPointer<vtkIntArray>::New();
@@ -218,13 +218,6 @@ int vtkMergeTreeGenerator::RequestData(
   labels->SetName("Segmentation");
   // For now we will create a full sized array
   labels->SetNumberOfTuples(data->GetNumberOfPoints());
-
-
-  vtkFloatArray* transform = vtkFloatArray::New();
-  transform->SetNumberOfComponents(1);
-  transform->SetName("Transformation");
-  // For now we will create a full sized array
-  transform->SetNumberOfTuples(data->GetNumberOfPoints());
 
 
 
@@ -262,8 +255,10 @@ int vtkMergeTreeGenerator::RequestData(
     std::sort(order.rbegin(),order.rend(),cmp);
   }
 
-  tree->SetMaximum(order[0]);
-  tree->SetMinimum(order.back());
+  tree->SetMaximum(function->GetTuple1(order[0]));
+  tree->SetMinimum(function->GetTuple1(order.back()));
+
+  fprintf(stderr,"%D Max %f Min %f\n",ComputeMergeTree,tree->GetMaximum(),tree->GetMinimum());
 
   UnionFind uf;
   vtkIdType neigh_label;
@@ -275,7 +270,7 @@ int vtkMergeTreeGenerator::RequestData(
   // For all vertices in descending order
   for (oIt=order.begin();oIt!=order.end();oIt++) {
 
-    fprintf(stderr,"Process vertex %d\n",*oIt);
+    //fprintf(stderr,"Process vertex %d\n",*oIt);
     // For all neighbors (careful might touch the same neighbor
     // multiple times
     for (it->initialize(*oIt);!it->end();(*it)++) {
@@ -343,13 +338,15 @@ int vtkMergeTreeGenerator::RequestData(
       labels->SetTuple1(*oIt,new_label);
     }
 
-    fprintf(stderr,"Setting label[%d] to %d\n",*oIt,(int)labels->GetTuple1(*oIt));
+    // Finally, we have the actual label for *oIt and we add it to the respective branch
+    tree->AddVertexToBranch(labels->GetTuple1(*oIt),*oIt);
+
+    //fprintf(stderr,"Setting label[%d] to %d\n",*oIt,(int)labels->GetTuple1(*oIt));
   } // end-for all vertices in sorted order
 
   delete it;
 
-
-  output->GetPointData()->SetScalars(transform);
+  fprintf(stderr,"Done with MT computation returning 1\n");
 
   return 1;
 }
