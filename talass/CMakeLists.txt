@@ -61,56 +61,12 @@
 # purposes.
 ################################################################################
 
-PROJECT(ADAPT)
+INCLUDE_DIRECTORIES(
+   ${CMAKE_CURRENT_SOURCE_DIR}/../src
+   ${TOPO_PARSER_INCLUDE_DIR}
+)
 
-cmake_minimum_required(VERSION 2.8)
+add_executable(talass_merge_tree  talass_merge_tree.cpp)
 
 
-
-IF (DEFINED ENABLE_TALASS)
-
-   FIND_PATH(TOPO_PARSER_INCLUDE_DIR TopoFileDefinitions.h
-      /usr/include
-      /usr/X11/include
-      /usr/X11R6/include
-      PATH_SUFFIXES TopologyFileParser
-    )
-
-    FIND_LIBRARY(TOPO_PARSER_LIBRARIES TopologyFileParser
-       /usr/lib
-       /sw/lib
-      PATH_SUFFIXES TopologyFileParser
-    )
-
-    IF (TOPO_PARSER_INCLUDE_DIR AND TOPO_PARSER_LIBRARIES)
-
-       SET(TOPO_PARSER_FOUND TRUE)
-       IF (CMAKE_VERBOSE_MAKEFILE)
-          MESSAGE("Using TOPO_PARSER_INCLUDE_DIR = " ${TOPO_PARSER_INCLUDE_DIR}) 
-          MESSAGE("Using TOPO_PARSER_LIBRARIES   = " ${TOPO_PARSER_LIBRARIES}) 
-       ENDIF (CMAKE_VERBOSE_MAKEFILE)
-
-    ELSE()
-   
-        MESSAGE("ERROR TopologyFileParser library not found on the system")
- 
-    ENDIF()
-
-    ADD_DEFINITIONS(-DTALASS_ENABLED)
-    
-
-ENDIF()
-
-add_subdirectory(src)
-
-IF (DEFINED ENABLE_TALASS)
-  add_subdirectory(talass)
-ENDIF()
-
-IF (DEFINED VTK_ENABLED)
-  FIND_PACKAGE(VTK COMPONENTS vtkCommonDataModel vtkFiltersCore vtkImagingStencil vtkIOXML NO_MODULE)
-  INCLUDE(${VTK_USE_FILE})
-
-  add_subdirectory(vtk)
-ENDIF()
-
+target_link_libraries(talass_merge_tree mtalgorithm ${TOPO_PARSER_LIBRARIES})

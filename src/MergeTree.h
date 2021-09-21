@@ -180,6 +180,12 @@ public:
   //! Return a reference to the i'th node
   const Node& node(LocalIndexType i) const {return mNodes[i];}
 
+  //! Return a reference to the i'th node
+  Arc& arc(LocalIndexType i) {return mArcs[i];}
+
+  //! Return a reference to the i'th node
+  const Arc& arc(LocalIndexType i) const {return mArcs[i];}
+
 	//! Return the minimum
 	FunctionType minimum() const {return mMinimum;}
 

@@ -66,6 +66,9 @@
 
 #include <stdint.h>
 
+#ifdef TALASS_ENABLED
+#include "TalassConfig.h"
+#else
 //! Type to index all vertices in a volume
 typedef uint64_t GlobalIndexType;
 
@@ -83,6 +86,9 @@ const LocalIndexType LNULL = (LocalIndexType)(-1);
 
 //! The type of the input data
 typedef float FunctionType;
+
+#endif
+
 
 //! Pointer to a global array of data (only valid after read in of course)
 //FunctionType* gData = NULL;

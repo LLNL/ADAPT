@@ -103,7 +103,7 @@ int merge_tree_sorted_sweep(Comparison& greater,
     //  fprintf(stderr,"%f\n",data[i]);
   }
 
-  fprintf(stderr,"Sorting\n");
+  fprintf(stderr,"Sorting %d vertices\n", order.size());
 
   // Sort all the vertices above the threshold by descending order.
   IndexComp sort_comp(gData,greater);
@@ -203,13 +203,14 @@ int merge_tree_sorted_sweep(Comparison& greater,
     }
 
     // If we need the fully augmented tree
-    if (augmented)
+    if (augmented && (*oIt != tree.node(label[*oIt]).index()))
       tree.addVertex(*oIt,label[*oIt]);
+
 
   } // end-for all vertices in sorted order
 
 
-  fprintf(stderr,"Processing  100%%\n");
+  fprintf(stderr,"Processing  100%% \n");
 
   return 1;
 }

@@ -103,6 +103,8 @@ LocalIndexType MergeTree::addCriticalPoint(GlobalIndexType id)
 {
   LocalIndexType i = (LocalIndexType)mNodes.size();
 
+  //fprintf(stderr,"Adding CP %d  %f\n",id,gData[id]);
+
   mNodes.push_back(Node(id,i));
   mArcs.push_back(Arc(id));
 
@@ -184,19 +186,23 @@ int MergeTree::splitByLength(FunctionType l)
   assert (l > 0);
 
   LocalIndexType i = 0;
+  LocalIndexType k=1;
 
   while (i < mArcs.size()) {
     if ((mArcs[i].size() > 1) && (mNodes[i].arcLength() > l)) {
-      LocalIndexType k=1;
+      k = 1;
 
-      for (k=1;k<mArcs.size();k++) {
+      for (k=1;k<mArcs[i].size();k++) {
+        //fprintf(stderr,"Vertex[%d] %d %f\n",k,mArcs[i].mVertices[k],gData[mArcs[i].mVertices[k]]);
         if (fabs(gData[mArcs[i].mVertices[0]] - gData[mArcs[i].mVertices[k]]) > mNodes[i].arcLength()/2)
           break;
-
-        k++;
       }
 
-      splitArc(i,k);
+      // Only if there is a vertex we can split on
+      if (k < mArcs[i].size())
+        splitArc(i,k); // Do we split the arc
+      else
+        i++; // we are done with this arc
     }
     else
       i++;
@@ -208,8 +214,11 @@ int MergeTree::splitByLength(FunctionType l)
 
 int MergeTree::splitArc(LocalIndexType a, LocalIndexType pos)
 {
+
   // First we create a new node
   LocalIndexType label = addCriticalPoint(mArcs[a].mVertices[pos]);
+
+  //fprintf(stderr,"Splitting arc %d at pos %d - %f    into %d\n",a,pos, gData[mArcs[a].mVertices[pos]],label);
 
   // Copy all the vertices
   mArcs[label].mVertices.insert(mArcs[label].mVertices.begin(),

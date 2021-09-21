@@ -73,6 +73,7 @@ SET(MT_SRC
     Metric.h
     Relevance.h
     R2.h
+    Threshold.h
     ManPage.h
     
     Neighborhood.cpp
@@ -82,8 +83,17 @@ SET(MT_SRC
     MTAlgorithm.cpp
     Relevance.cpp
     R2.cpp
+    Threshold.cpp
     ManPage.cpp
 )
+
+IF (DEFINED ENABLE_TALASS)
+  INCLUDE_DIRECTORIES(
+     ${TOPO_PARSER_INCLUDE_DIR}
+  )
+ENDIF()
+
+
 
 add_library(mtalgorithm STATIC ${MT_SRC})    
 

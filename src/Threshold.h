@@ -61,60 +61,34 @@
 * purposes.
 ********************************************************************************/
 
-#ifndef METRIC_H
-#define METRIC_H
-
-#include <assert.h>
-#include <cstddef>
-#include <map>
+#ifndef THRESHOLD_H
+#define THRESHOLD_H
 
 #include "Definitions.h"
 #include "MergeTree.h"
+#include "Metric.h"
 
-//! The basclass for all metrics
-class Metric
+class Threshold : public Metric
 {
 public:
 
-  //! Constructor indicating whether this metric will require explicit arcs
-  Metric(bool explicit_arcs) : mExplicitArcs(explicit_arcs), mData(NULL), mTree(NULL) {}
+  //! Default constructor
+  Threshold() : Metric(false) { this->mDefault = 0;}
 
   //! Destructor
-  virtual ~Metric() {}
-
-  virtual bool explicitArcs() const {return mExplicitArcs;}
-
-  //! Return the default value
-  virtual FunctionType fillValue() const {return mDefault;}
-
-  //! Initialize the pointer to the data and the active tree
-  virtual void initialize(const FunctionType* data, const MergeTree* tree) {
-    mData = data;
-    mTree = tree;
-  }
+  virtual ~Threshold() {}
 
   //! Evaluate the metric at vertex id with the given label
-  virtual FunctionType eval(GlobalIndexType id, LocalIndexType label) const {assert(false);return 0;}
+  virtual FunctionType eval(GlobalIndexType id, LocalIndexType label) const;
 
   //! Evaluate the metric for all nodes of the given tree
-  virtual int eval(MergeTree& tree) const {assert(false);return 0;}
+  virtual int eval(MergeTree& tree) const;
 
-protected:
 
-  //! Flag indicating whether we need explicit arcs
-  const bool mExplicitArcs;
-
-  //! Pointer to the data
-  const FunctionType* mData;
-
-  //! Pointer to the corresponding merge tree
-  const MergeTree* mTree;
-
-  //! Default value for vertices with no label
-  FunctionType mDefault;
 };
 
 
 
 
-#endif /* METRIC_H_ */
+
+#endif /* RELEVANCE_H_ */
