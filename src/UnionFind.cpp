@@ -63,7 +63,7 @@
 
 #include "UnionFind.h"
 
-
+/*
 LocalIndexType UnionFind::rep(LocalIndexType id)
 {
   LocalIndexType local;
@@ -94,9 +94,33 @@ LocalIndexType UnionFind::rep(LocalIndexType id)
   }
   return id;
 }
+*/
+
+LocalIndexType UnionFind::rep(LocalIndexType id)
+{
+  LocalIndexType local;
+
+  //fprintf(stderr,"rep(%d)   %d\n",id,mLabel[id]);
+  //! Sanity check to make sure we ask only for existsing labels
+  assert(mIndexMap.find(id) != mIndexMap.end());
+
+  //! Get the local index of the label in question
+  local = mIndexMap.find(id)->second;
+
+  if (mLabel[local] == id)
+    return id;
+  else {
+    mLabel[local] = rep(mLabel[local]);
+    return mLabel[local];
+  }
+}
+
+
+
 
 void UnionFind::addLabel(LocalIndexType label)
 {
+  //fprintf(stderr,"addlabel %d %d\n",label,mLabel.size());
   mLabel.push_back(label);
   mIndexMap[label] = (LocalIndexType)(mLabel.size()-1);
 }
@@ -106,6 +130,7 @@ void UnionFind::mergeLabel(LocalIndexType from, LocalIndexType to)
   assert(mIndexMap.find(from) != mIndexMap.end());
   assert(mIndexMap.find(to) != mIndexMap.end());
 
+  //fprintf(stderr,"Merge label %d into %d\n",from,to);
   // Make sure the "newer" label survives
   assert(from < to);
 

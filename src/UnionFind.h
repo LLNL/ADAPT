@@ -65,7 +65,7 @@
 #define UNIONFIND_H_
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <cassert>
 #include <stack>
 
@@ -102,7 +102,7 @@ private:
   std::vector<LocalIndexType> mLabel;
 
   //! An index map to convert global label-indices into local mLabel indices
-  std::map<LocalIndexType,LocalIndexType> mIndexMap;
+  std::unordered_map<LocalIndexType,LocalIndexType> mIndexMap;
 };
 
 
