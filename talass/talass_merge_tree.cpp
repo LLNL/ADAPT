@@ -65,6 +65,7 @@
 #include <cstdio>
 #include <cstring>
 #include <stack>
+#include <set>
 
 
 #include "Definitions.h"
@@ -165,18 +166,49 @@ using namespace TopologyFileFormat;
 
 void accumulateVolume(const MergeTree& tree, LocalIndexType root, Data<FunctionType>& data)
 {
-  if (tree.node(root).up() == LNULL) // If this is a leaf the volume it correct
-    return;
+  std::stack<LocalIndexType> front;
+  LocalIndexType top;
+  std::set<LocalIndexType> processed;
 
-  LocalIndexType up = tree.node(root).up();
+  front.push(root);
 
-  do {
-    accumulateVolume(tree,up,data);
+  while (!front.empty()) {
 
-    data[root] += data[up];
+    top = front.top();
 
-    up = tree.node(up).next();
-  } while (up != tree.node(root).up());
+    // If this is the first time we see this node
+    if (processed.find(top) == processed.end()) {
+
+      LocalIndexType up = tree.node(top).up();
+
+      if (up == LNULL) {// If this is a leaf the volume it correct
+        front.pop(); // and there is nothing to do
+      }
+      else { // Otherwise
+
+        do { // add all the children
+          front.push(up);
+          up = tree.node(up).next();
+        } while (up != tree.node(top).up());
+
+        // Remember that we are done with this node
+        processed.insert(top);
+      }
+    }
+    else { // If we have already processed this node then the volume of my children is correct
+
+      assert (tree.node(top).up() != LNULL); // We should not get here for a leaf
+
+      LocalIndexType up = tree.node(top).up();
+      do { // add the volume from all children
+
+        data[top] += data[up];
+        up = tree.node(up).next();
+      } while (up != tree.node(top).up());
+
+      front.pop();
+    }
+  }
 
   return;
 }
@@ -466,7 +498,7 @@ int main(int argc, const char** argv)
   simp.metric("Threshold");
 
   // Set the encoding
-  simp.encoding();
+  simp.encoding(false);
 
   // Add the simplification handle to the family
   family.add(simp);
@@ -490,7 +522,9 @@ int main(int argc, const char** argv)
 
 
   // and write the file
-  clan.write(gOutputFileName);
+  char full_name[200];
+  sprintf(full_name,"%s.family",gOutputFileName);
+  clan.write(full_name);
 
 
   ClanHandle seg_clan;
@@ -520,7 +554,8 @@ int main(int argc, const char** argv)
   seg_clan.add(seg_family);
 
   // and write the file
-  seg_clan.write("output.seg");
+  sprintf(full_name,"%s.seg",gOutputFileName);
+  seg_clan.write(full_name);
 
 
 
