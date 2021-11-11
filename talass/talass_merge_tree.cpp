@@ -74,7 +74,7 @@
 #include "MergeTree.h"
 #include "MTAlgorithm.h"
 #include "Relevance.h"
-#include "R2.h"
+#include "LocalThreshold.h"
 #include "Threshold.h"
 #include "ManPage.h"
 
@@ -108,7 +108,7 @@ static const char* gOptions[NUM_OPTIONS] = {
 const char* gInputFileName = NULL;
 
 //! Name of the output file
-const char* gOutputFileName = NULL;
+const char* gOutputFileName = "output";
 
 //! Global array of data (will be allocated to gDim[0]*gDim[1]*gDim[2]
 FunctionType* gData = NULL;
@@ -150,13 +150,13 @@ FunctionType gSplitLimit = -1;
 static const char* gMetricTypeOptions[NUM_METRIC_TYPES] = {
     "threshold",
     "relevance",
-    "R2",
+    "local",
 };
 //! Enum of metrics
 enum MetricType {
   METRIC_THRESHOLD = 0,
   METRIC_RELEVANCE = 1,
-  METRIC_R2 = 2,
+  METRIC_LOCAL = 2,
 };
 //! The metric used
 MetricType gMetric = METRIC_THRESHOLD;
@@ -301,7 +301,7 @@ int parse_command_line(int argc, const char** argv)
 int main(int argc, const char** argv)
 {
   //Parse the command line input and define the execution settings
-  if (parse_command_line(argc,argv) == 0) {
+  if ((argc == 1) || (parse_command_line(argc,argv) == 0)) {
     print_help(stdout,argv[0]);
     return 0;
   }
@@ -319,8 +319,8 @@ int main(int argc, const char** argv)
       metric = new Relevance();
       break;
     }
-    case METRIC_R2: {
-      metric = new R2();
+    case METRIC_LOCAL: {
+      metric = new LocalThreshold();
       break;
     }
     default:
@@ -351,15 +351,15 @@ int main(int argc, const char** argv)
 
   MergeTree tree;
   FullNeighborhood neighborhood(gDim);
-  bool augmented = true;//metric->explicitArcs();
+  bool augmented = metric->explicitArcs();
 
   if (gTreeType == 0) {
     MergeTreeComp comp;
-    merge_tree_sorted_sweep(comp,neighborhood,gThreshold,tree,augmented,labels);
+    merge_tree_sorted_sweep(comp,neighborhood,gThreshold,tree,true,labels);
   }
   else {
     SplitTreeComp comp;
-    merge_tree_sorted_sweep(comp,neighborhood,gThreshold,tree,augmented,labels);
+    merge_tree_sorted_sweep(comp,neighborhood,gThreshold,tree,true,labels);
   }
 
   LocalIndexType label;
@@ -380,6 +380,9 @@ int main(int argc, const char** argv)
 
       /// Remove it from its current arc
       tree.arc(i).mVertices.pop_back();
+
+      // Make sure that we pass on the representative
+      tree.node(label).rep(tree.node(i).rep());
     }
 
   }
@@ -402,10 +405,10 @@ int main(int argc, const char** argv)
 
   metric->initialize(gData,&tree);
 
-  // If the metric needs augmented arcs we assume we need to evaluate it
-  // per tree
-  if (augmented)
-    metric->eval(tree);
+  // Evaluate the metric on all critical points
+  for (LocalIndexType i=0;i<tree.size();i++)
+    tree.node(i).metric(metric->eval(tree.node(i).index(),i));
+
 
   // Compute the volume
   Data<FunctionType> volume(tree.size());
@@ -446,12 +449,12 @@ int main(int argc, const char** argv)
 
   for (LocalIndexType i=0;i<tree.size();i++) {
 
-    life[1] = gData[tree.node(i).index()];
+    life[1] = tree.node(i).metric();
     if (tree.node(i).down() == LNULL) { // local minimum
-      life[0] = gData[tree.node(i).index()];
+      life[0] = tree.node(i).metric();
     }
     else
-      life[0] = gData[tree.node(tree.node(i).down()).index()];
+      life[0] = tree.node(tree.node(i).down()).metric();
 
 
     if (life[0] > life[1])
@@ -472,7 +475,7 @@ int main(int argc, const char** argv)
     high = std::max(high,life[1]);
   }
 
-  fprintf(stderr,"GLoablIndexType %d ... LocalIndexType  %d \n",sizeof(GlobalIndexType),sizeof(LocalIndexType));
+  fprintf(stderr,"GlobalIndexType %d ... LocalIndexType  %d \n",sizeof(GlobalIndexType),sizeof(LocalIndexType));
 
   // Create a handle to a family
   ClanHandle clan;
@@ -495,10 +498,26 @@ int main(int argc, const char** argv)
   // always only have a single represetative
   simp.fileType(SINGLE_REPRESENTATIVE);
 
-  simp.metric("Threshold");
+  switch (gMetric) {
+    case METRIC_THRESHOLD: {
+      simp.metric("Threshold");
+      break;
+    }
+    case METRIC_RELEVANCE: {
+      simp.metric("Relevance");
+      break;
+    }
+    case METRIC_LOCAL: {
+      simp.metric("LocalThreshold");
+      break;
+    }
+    default:
+      fprintf(stderr,"Error, unkonwn metric\n");
+      return 0;
+  }
 
   // Set the encoding
-  simp.encoding(false);
+  simp.encoding(true);
 
   // Add the simplification handle to the family
   family.add(simp);
@@ -510,7 +529,7 @@ int main(int argc, const char** argv)
   volume_handle.aggregated(true);
   volume_handle.stat("vertexCount");
   volume_handle.species("xray");
-  volume_handle.encoding(false);
+  volume_handle.encoding(true);
   volume_handle.setData(&volume);
 
   family.add(volume_handle);

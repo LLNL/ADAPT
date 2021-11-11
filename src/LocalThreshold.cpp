@@ -61,34 +61,16 @@
 * purposes.
 ********************************************************************************/
 
-#include "ManPage.h"
+#include "LocalThreshold.h"
 
-void print_help(FILE* output, const char* exec)
+
+FunctionType LocalThreshold::eval(GlobalIndexType id, LocalIndexType label) const
 {
-  fprintf(output,"Usage: %s [options]\nWhere options can be any of the following:\n\n",exec);
+  if (label == LNULL)
+    return this->mDefault;
 
-  fprintf(output,"--i <filename>\n\tFilename of the input file\n");
-  fprintf(output,"--o <filename>\n\tFilename of the output file if not provided stdout will be used\n");
-  fprintf(output,"--dim <int> <int> <int>\n\tGrid size in x, y, and z dimensions\n");
-
-  fprintf(output,"--tree-type [0 | 1]\n\tWhether to compute merge (0, default) or split tree (1)\n");
-  fprintf(output,"--threshold <float>\n\tMinimal (merge tree) or maximal (split tree) function value considered valid\n");
-
-  fprintf(output,"--split-type <string>\n\
-      \tlength: Split the tree by limiting the function length in function space\n\
-      \t  size: Split the tree by limiting the number of vertices of an arc\n");
-
-  fprintf(output,"--split <float>\n\tThe maximal length|size allowed for an arc\n");
-
-
-  fprintf(output,"--metric <string>\n\
-      \trelevance: Relevance metric\n\
-      \tthreshold: Standard threshold metric\n\
-      \t    local: LocalThreshold metric\n\
-      \t       R2: Quality\n");
-
+  FunctionType local_max = mData[mTree->node(mTree->node(label).rep()).index()];
+  return fabs(local_max - mData[id]);
 }
-
-
 
 

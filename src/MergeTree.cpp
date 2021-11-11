@@ -218,6 +218,9 @@ int MergeTree::splitArc(LocalIndexType a, LocalIndexType pos)
   // First we create a new node
   LocalIndexType label = addCriticalPoint(mArcs[a].mVertices[pos]);
 
+  // Make sure we pass on the representative
+  mNodes[label].rep(mNodes[a].rep());
+
   //fprintf(stderr,"Splitting arc %d at pos %d - %f    into %d\n",a,pos, gData[mArcs[a].mVertices[pos]],label);
 
   // Copy all the vertices

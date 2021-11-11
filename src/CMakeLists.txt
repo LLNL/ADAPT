@@ -74,6 +74,7 @@ SET(MT_SRC
     Relevance.h
     R2.h
     Threshold.h
+    LocalThreshold.h
     ManPage.h
     
     Neighborhood.cpp
@@ -84,6 +85,7 @@ SET(MT_SRC
     Relevance.cpp
     R2.cpp
     Threshold.cpp
+    LocalThreshold.cpp
     ManPage.cpp
 )
 

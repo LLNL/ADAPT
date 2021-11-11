@@ -61,34 +61,30 @@
 * purposes.
 ********************************************************************************/
 
-#include "ManPage.h"
+#ifndef LOCALTHRESHOLD_H
+#define LOCALTHRESHOLD_H
 
-void print_help(FILE* output, const char* exec)
+#include "Definitions.h"
+#include "MergeTree.h"
+#include "Metric.h"
+
+class LocalThreshold : public Metric
 {
-  fprintf(output,"Usage: %s [options]\nWhere options can be any of the following:\n\n",exec);
+public:
 
-  fprintf(output,"--i <filename>\n\tFilename of the input file\n");
-  fprintf(output,"--o <filename>\n\tFilename of the output file if not provided stdout will be used\n");
-  fprintf(output,"--dim <int> <int> <int>\n\tGrid size in x, y, and z dimensions\n");
+  //! Default constructor
+  LocalThreshold() : Metric(false) { this->mDefault = 0;}
 
-  fprintf(output,"--tree-type [0 | 1]\n\tWhether to compute merge (0, default) or split tree (1)\n");
-  fprintf(output,"--threshold <float>\n\tMinimal (merge tree) or maximal (split tree) function value considered valid\n");
+  //! Destructor
+  virtual ~LocalThreshold() {}
 
-  fprintf(output,"--split-type <string>\n\
-      \tlength: Split the tree by limiting the function length in function space\n\
-      \t  size: Split the tree by limiting the number of vertices of an arc\n");
+  //! Evaluate the metric at vertex id with the given label
+  virtual FunctionType eval(GlobalIndexType id, LocalIndexType label) const;
 
-  fprintf(output,"--split <float>\n\tThe maximal length|size allowed for an arc\n");
-
-
-  fprintf(output,"--metric <string>\n\
-      \trelevance: Relevance metric\n\
-      \tthreshold: Standard threshold metric\n\
-      \t    local: LocalThreshold metric\n\
-      \t       R2: Quality\n");
-
-}
+};
 
 
 
 
+
+#endif /* RELEVANCE_H_ */
