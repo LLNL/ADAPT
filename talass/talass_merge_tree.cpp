@@ -517,7 +517,7 @@ int main(int argc, const char** argv)
   }
 
   // Set the encoding
-  simp.encoding(true);
+  simp.encoding(false);
 
   // Add the simplification handle to the family
   family.add(simp);
@@ -529,7 +529,7 @@ int main(int argc, const char** argv)
   volume_handle.aggregated(true);
   volume_handle.stat("vertexCount");
   volume_handle.species("xray");
-  volume_handle.encoding(true);
+  volume_handle.encoding(false);
   volume_handle.setData(&volume);
 
   family.add(volume_handle);
