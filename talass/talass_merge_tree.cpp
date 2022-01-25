@@ -164,7 +164,7 @@ MetricType gMetric = METRIC_THRESHOLD;
 using namespace TopologyFileFormat;
 
 
-void accumulateVolume(const MergeTree& tree, LocalIndexType root, Data<FunctionType>& data)
+void accumulateVolume(const MergeTree& tree, LocalIndexType root, Data<uint64_t>& data)
 {
   std::stack<LocalIndexType> front;
   LocalIndexType top;
@@ -411,7 +411,7 @@ int main(int argc, const char** argv)
 
 
   // Compute the volume
-  Data<FunctionType> volume(tree.size());
+  Data<uint64_t> volume(tree.size());
   for (LocalIndexType i=0;i<tree.size();i++)
     volume[i] = tree.arc(i).size();
 
@@ -433,7 +433,7 @@ int main(int argc, const char** argv)
   FILE* output;
 
 
-  Data<FeatureElement> features;
+  FeatureElementData features;
 
 
   FunctionType life[2];
@@ -484,6 +484,9 @@ int main(int argc, const char** argv)
   // Set the overall function range of the clan
   family.range(tree.minimum(),tree.maximum());
 
+  // Name the attribute
+  family.variableName("Attribute0");
+
   // Now assemble the simplification sequence
   SimplificationHandle simp;
   FunctionType range[2];
@@ -526,6 +529,7 @@ int main(int argc, const char** argv)
   // Create the volume handle
   StatHandle volume_handle;
 
+
   volume_handle.aggregated(true);
   volume_handle.stat("vertexCount");
   volume_handle.species("xray");
@@ -551,6 +555,10 @@ int main(int argc, const char** argv)
 
   // Set the overall function range of the clan
   seg_family.range(tree.minimum(),tree.maximum());
+
+  // Name the attribute
+  seg_family.variableName("Attribute0");
+
 
   SegmentationHandle seg_handle;
   seg_handle.domainType(REGULAR_GRID);
