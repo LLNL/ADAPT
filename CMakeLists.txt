@@ -69,7 +69,7 @@ cmake_minimum_required(VERSION 2.8)
 
 IF (DEFINED ENABLE_TALASS)
 
-   FIND_PATH(TOPO_PARSER_INCLUDE_DIR TopoFileDefinitions.h
+   FIND_PATH(TOPO_PARSER_INCLUDE_DIR TalassConfig.h
       /usr/include
       /usr/X11/include
       /usr/X11R6/include
