@@ -63,39 +63,35 @@
 
 #include "UnionFind.h"
 
-/*
+
 LocalIndexType UnionFind::rep(LocalIndexType id)
 {
-  LocalIndexType local;
+   LocalIndexType local;
+   static std::vector<LocalIndexType> s;
 
-  //! Sanity check to make sure we ask only for existsing labels
+  //! Sanity check to make sure we ask only for existing labels
   assert(mIndexMap.find(id) != mIndexMap.end());
 
   //! Get the local index of the label in question
   local = mIndexMap.find(id)->second;
 
+  s.clear();
   //! Jump "upward" until you find the current representative
-  std::stack<LocalIndexType> s;
   while (mLabel[local] != id) {
-    s.push(local);
+    s.push_back(local);
     id = mLabel[local];
 
     assert(mIndexMap.find(id) != mIndexMap.end());
     local = mIndexMap.find(id)->second;
   }
 
-  //! Shortcut the structure
-  if (!s.empty()) {
-    s.pop();
-    while (!s.empty()) {
-      mLabel[s.top()] = id;
-      s.pop();
-    }
-  }
+  for (auto it=s.begin();it!=s.end();it++)
+    mLabel[*it] = id;
+
   return id;
 }
-*/
 
+/*
 LocalIndexType UnionFind::rep(LocalIndexType id)
 {
   LocalIndexType local;
@@ -114,7 +110,7 @@ LocalIndexType UnionFind::rep(LocalIndexType id)
     return mLabel[local];
   }
 }
-
+*/
 
 
 

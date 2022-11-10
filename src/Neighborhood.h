@@ -95,6 +95,7 @@ public:
 
     GlobalIndexType operator*() {return mOrigin + mOffsets[mCurrent];}
 
+    bool end() const {return mCount == mCurrent;}
 
  private:
     iterator(GlobalIndexType v, GlobalIndexType dim[3],int8_t* neighbors,SignedGlobalIndexType* offsets, uint8_t count);
