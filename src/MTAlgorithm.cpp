@@ -134,7 +134,7 @@ int merge_tree_sorted_sweep(Comparison& greater,
     progress++;
 
     // For all neighbors
-    for (it=neighborhood.begin(*oIt);it.end();it++) {
+    for (it=neighborhood.begin(*oIt);!it.end();it++) {
       if (label[*it] != LNULL) { // If the neighbor has already been labeled it is considered higher
         neigh_label = uf.rep(label[*it]); // Find its current active label
 
